@@ -3,67 +3,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>roblox.iran - Private Server Shortener</title>
+  <title>rblx.short - Free Roblox Link Shortener</title>
   <style>
-    :root { --bg: #0a84ff; }
+    :root { --primary: #0a84ff; }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #0a84ff, #003399);
+      background: linear-gradient(135deg, #0a84ff, #0033aa);
       color: white;
       min-height: 100vh;
-      padding: 20px;
+      padding: 20px 10px;
     }
     .container { max-width: 720px; margin: 0 auto; }
-    h1 { font-size: 3rem; text-align:center; margin-bottom: 8px; }
-    .subtitle { text-align:center; font-size: 1.2rem; opacity: 0.9; }
-    .tabs { display:flex; gap:8px; justify-content:center; margin:30px 0; flex-wrap:wrap; }
-    .tab {
-      padding: 10px 24px;
-      border-radius: 50px;
-      background: rgba(255,255,255,0.15);
-      cursor: pointer;
+    header { text-align: center; margin-bottom: 30px; }
+    h1 { font-size: 3.2rem; margin-bottom: 8px; }
+    .subtitle { font-size: 1.15rem; opacity: 0.95; margin-bottom: 30px; }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 25px 0;
+      flex-wrap: wrap;
     }
-    .tab.active { background: #000; }
+    .tab {
+      padding: 10px 22px;
+      border-radius: 50px;
+      background: rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .tab.active {
+      background: #000;
+      color: white;
+    }
+
     .card {
-      background: rgba(0,0,0,0.75);
-      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 18px;
       padding: 24px;
       margin-bottom: 20px;
     }
+
     input {
       width: 100%;
       padding: 16px;
+      margin: 10px 0;
       border: none;
       border-radius: 12px;
       background: #111;
       color: white;
       font-size: 16px;
-      margin: 12px 0;
     }
-    .row { display: flex; gap: 12px; }
+
+    .domain-bar {
+      display: flex;
+      background: #000;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+    .domain-bar div {
+      padding: 12px 16px;
+      border-radius: 10px;
+    }
+    .domain-main { background: #000; flex: 1; }
+
     button {
-      padding: 16px 28px;
+      padding: 16px 32px;
       border: none;
       border-radius: 12px;
-      background: #0a84ff;
+      background: var(--primary);
       color: white;
       font-weight: 600;
       cursor: pointer;
+      font-size: 16px;
     }
+    button:hover { background: #0066dd; }
+
     .link-item {
       background: rgba(0,0,0,0.6);
       padding: 16px;
       border-radius: 12px;
       margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .footer { text-align:center; margin-top:60px; opacity:0.8; font-size:0.9rem; }
+
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      opacity: 0.75;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>roblox.iran</h1>
-    <p class="subtitle">Got a long Roblox link? Paste it and get a clean short link.</p>
+    <header>
+      <h1>rblx.short</h1>
+      <p class="subtitle">Got a long link? Paste it here and we'll make it short.</p>
+    </header>
 
     <div class="tabs">
       <div class="tab active">Shorten</div>
@@ -72,61 +113,92 @@
     </div>
 
     <div class="card">
-      <div style="display:flex; background:#000; border-radius:12px; padding:4px;">
-        <div style="flex:1; padding:12px 16px; background:#000; border-radius:10px;">roblox.iran</div>
+      <div class="domain-bar">
+        <div class="domain-main">rblx.short</div>
       </div>
 
       <input type="text" id="longUrl" placeholder="Paste your long Roblox URL here...">
-      
-      <div class="row">
-        <input type="text" id="customPath" placeholder="private-server-link or games-xxx" style="flex:1;">
+
+      <div style="display:flex; gap:12px;">
+        <input type="text" id="customPath" placeholder="your-custom-path (e.g. private-aid)" style="flex:1;">
         <button onclick="createLink()">Create Link</button>
       </div>
     </div>
 
     <div class="card">
-      <strong>My Links</strong>
+      <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+        <strong>My Links</strong>
+        <span id="usage">0/10 used</span>
+      </div>
       <div id="linksList"></div>
     </div>
   </div>
 
   <div class="footer">
-    © 2026 roblox.iran • Not affiliated with Roblox Corporation
+    © 2026 rblx.short • Free & Open Source<br>
+    Not affiliated with Roblox Corporation.
   </div>
 
   <script>
-    let links = JSON.parse(localStorage.getItem('links')) || [];
+    let links = JSON.parse(localStorage.getItem('rblxLinks')) || [];
 
     function createLink() {
-      const url = document.getElementById('longUrl').value.trim();
-      let path = document.getElementById('customPath').value.trim() || Math.random().toString(36).substring(2,12);
+      const longUrl = document.getElementById('longUrl').value.trim();
+      let path = document.getElementById('customPath').value.trim();
 
-      if (!url) return alert("Enter a URL");
+      if (!longUrl) {
+        alert("Please enter a long URL");
+        return;
+      }
 
-      const short = `https://roblox.iran/${path}`;
+      if (!path) {
+        path = Math.random().toString(36).substring(2, 10);
+      }
 
-      links.unshift({ short, original: url, path });
-      localStorage.setItem('links', JSON.stringify(links));
+      const shortUrl = `https://YOUR-PAGES-DEV-HERE.pages.dev/${path}`;
+
+      links.unshift({
+        short: `rblx.short/${path}`,
+        full: shortUrl,
+        original: longUrl
+      });
+
+      localStorage.setItem('rblxLinks', JSON.stringify(links));
       renderLinks();
 
-      navigator.clipboard.writeText(short);
-      alert(`✅ Link created!\n${short}`);
+      navigator.clipboard.writeText(shortUrl);
+      alert(`✅ Link Created & Copied!\n\n${shortUrl}`);
     }
 
     function renderLinks() {
-      const div = document.getElementById('linksList');
-      div.innerHTML = links.map(l => `
-        <div class="link-item">
-          <div>
-            <strong>${l.short}</strong><br>
-            <small>${l.original.substring(0,70)}...</small>
+      const container = document.getElementById('linksList');
+      container.innerHTML = '';
+
+      if (links.length === 0) {
+        container.innerHTML = '<p style="text-align:center; opacity:0.7; padding:30px;">No links yet. Create one above!</p>';
+        return;
+      }
+
+      links.forEach(link => {
+        const div = document.createElement('div');
+        div.className = 'link-item';
+        div.innerHTML = `
+          <div style="flex:1;">
+            <strong>${link.short}</strong><br>
+            <small style="opacity:0.7;">${link.original.substring(0, 65)}...</small>
           </div>
-          <button onclick="copy('${l.short}')" style="background:none;border:none;color:#0af;">Copy</button>
-        </div>
-      `).join('');
+          <button onclick="copyLink('${link.full}')" style="background:none; border:none; color:#0a84ff; font-size:15px;">Copy</button>
+        `;
+        container.appendChild(div);
+      });
     }
 
-    function copy(text) { navigator.clipboard.writeText(text); alert("Copied!"); }
+    function copyLink(url) {
+      navigator.clipboard.writeText(url);
+      alert("✅ Copied to clipboard!");
+    }
+
+    // Initialize
     renderLinks();
   </script>
 </body>
